@@ -1,0 +1,14 @@
+{
+  "name": "registro-libros-node",
+  "version": "1.0.0",
+  "description": "Aplicación MVC de registro de libros usando Node.js y Express",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "mysql2": "^3.4.2"
+  }
+}

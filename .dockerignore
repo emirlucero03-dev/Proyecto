@@ -1,0 +1,11 @@
+node_modules/
+.env/
+logs/
+*.log
+__pycache__/
+.gitignore
+REASDME.md
+database/
+.env.example
+start.sh 
+

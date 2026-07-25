@@ -1,0 +1,70 @@
+services:
+  # Servicio principal de la aplicación Node.js
+  app:
+    # Construye la imagen a partir del Dockerfile del directorio actual.
+    # Esto es importante porque permite ejecutar la app en un contenedor con
+    # las dependencias necesarias definidas en el proyecto.
+    build: .
+
+    # Expone el puerto 3000 del contenedor hacia el host.
+    # Así puedes abrir la aplicación en tu navegador en http://localhost:3000.
+    ports:
+      - "3000:3000"
+
+    # Variables de entorno que la aplicación necesita para conectarse a la base de datos
+    # y para saber en qué puerto debe escuchar.
+    environment:
+      DB_HOST: mariadbDocker
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: library
+      PORT: 3000
+
+    # Asegura que la base de datos esté lista antes de iniciar la app.
+    # Esto evita errores de conexión cuando la app intenta hablar con MariaDB.
+    depends_on:
+      mariadbDocker:
+        condition: service_healthy
+
+  # Servicio de base de datos MariaDB
+  mariadbDocker:
+    # Usa la imagen oficial de MariaDB, que ya incluye el motor de base de datos.
+    # No es necesario usar build aquí porque la imagen oficial ya está lista para funcionar.
+    image: mariadb:11.4
+
+    # Expone el puerto 3306 para permitir conexiones desde herramientas externas.
+    ports:
+      - "3306:3306"
+
+    # Configuración inicial de la base de datos.
+    # Estas variables crean la base de datos y definen la contraseña del usuario root.
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: library
+
+    # Volumen persistente para guardar los datos de MariaDB entre reinicios del contenedor.
+    # Sin este volumen, los datos se perderían al eliminar el contenedor.
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
+    # Healthcheck para comprobar que MariaDB ya está lista para aceptar conexiones.
+    # Esto es importante porque la app depende de que la BD esté disponible.
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  nginx: 
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro 
+    depends_on:
+      - app
+
+
+# Definición del volumen persistente usado por MariaDB.
+volumes:
+  mariadb_data:

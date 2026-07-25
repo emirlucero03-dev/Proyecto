@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Libros</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Registrar Libro</h1>
+        <% if (!dbReady) { %>
+        <div class="status warning">
+            No se pudo conectar a MariaDB. La aplicación está usando almacenamiento temporal en memoria.
+            <% if (dbError) { %><br><small><%= dbError %></small><% } %>
+        </div>
+        <% } %>
+        <form action="/add" method="POST" class="book-form">
+            <label for="title">Título</label>
+            <input type="text" id="title" name="title" required>
+
+            <label for="author">Autor</label>
+            <input type="text" id="author" name="author" required>
+
+            <label for="year">Año</label>
+            <input type="text" id="year" name="year" maxlength="4" required>
+
+            <label for="image_url">URL de imagen</label>
+            <input type="text" id="image_url" name="image_url" placeholder="https://...">
+
+            <button type="submit">Guardar</button>
+        </form>
+
+        <h2>Libros registrados</h2>
+        <div class="books-grid">
+            <% books.forEach((book) => { %>
+            <div class="book-card">
+                <div class="book-image">
+                    <% if (book.image_url) { %>
+                    <img src="<%= book.image_url %>" alt="<%= book.title %>">
+                    <% } else { %>
+                    <div class="image-placeholder">Sin imagen</div>
+                    <% } %>
+                </div>
+                <div class="book-info">
+                    <h3><%= book.title %></h3>
+                    <p>Autor: <%= book.author %></p>
+                    <p>Año: <%= book.year %></p>
+                </div>
+            </div>
+            <% }) %>
+        </div>
+    </div>
+</body>
+</html>
