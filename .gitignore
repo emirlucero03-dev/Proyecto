@@ -5,3 +5,4 @@ logs/
 __pycache__/
 start.sh
 database/
+backup_libreria/
