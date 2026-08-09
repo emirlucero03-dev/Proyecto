@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  app-green:
+    # Construye la imagen usando el contexto actual y un Dockerfile alternativo.
+    build:
+      context: .
+      dockerfile: Dockerfile.green
+
+    # Nombre fijo para el contenedor. Evita nombres automáticos como "happy_morse".
+    container_name: telematica-app-green
+
+    # Variables de entorno que la aplicación usa para conectarse a la base de datos
+    # y para definir el puerto en el que la aplicación escuchará dentro del contenedor.
+    environment:
+      DB_HOST: mariadbDocker
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: library
+      PORT: 3000
+
+    # Conecta el servicio a una red Docker existente llamada libreria_default.
+    networks:
+      - libreria_default
+
+    # Expone el puerto interno 3000 del contenedor en el puerto 3001 del host.
+    # Cambia a "3000:3000" si quieres que el contenedor sea accesible en el mismo puerto.
+    ports:
+      - "3001:3000"
+
+# Definición de redes compartidas entre servicios.
+# En este caso se reutiliza una red externa ya existente llamada libreria_default.
+networks:
+  libreria_default:
+    # Esta red se considera externa. Docker Compose no la crea automáticamente.
+    # Debe existir antes de levantar este servicio.
+    external: true

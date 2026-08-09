@@ -1,0 +1,44 @@
+# Base de la imagen: usa Node.js versión 18 como entorno de ejecución.
+# Esto incluye Node y npm listos para usar dentro del contenedor.
+FROM node:18
+
+# Instala nodemon globalmente en el contenedor.
+# nodemon reinicia la aplicación automáticamente cuando detecta cambios en los archivos.
+# Esto suele usarse para desarrollo; en producción normalmente no se usa nodemon.
+RUN npm i -g nodemon
+
+# Crea el directorio de trabajo dentro del contenedor si no existe.
+# La opción -p asegura que se creen todas las carpetas necesarias.
+RUN mkdir -p /home/libreria
+
+# Establece /home/libreria como directorio de trabajo para los siguientes comandos.
+# A partir de aquí, todas las instrucciones COPY, RUN y CMD operan en este directorio.
+WORKDIR /home/libreria
+
+# Copia los archivos de dependencias al contenedor.
+# package*.json incluye package.json y package-lock.json (si existe).
+# Esto permite instalar las dependencias antes de copiar el resto del código,
+# lo que mejora el uso de la cache de Docker cuando el código cambia.
+COPY package*.json ./
+
+# Instala las dependencias definidas en package.json dentro del contenedor.
+# Se ejecuta en el directorio /home/libreria porque WORKDIR ya fue establecido.
+RUN npm install
+
+# Copia todos los archivos del proyecto al directorio de trabajo del contenedor.
+# Esto incluye app.js, controladores, vistas, archivos estáticos y cualquier otro recurso.
+COPY . .
+
+# Expone el puerto 3000 del contenedor.
+# Esta instrucción no publica el puerto en el host por sí sola,
+# pero indica que la aplicación escucha en ese puerto.
+EXPOSE 3000
+
+# Comando que se ejecuta cuando el contenedor se inicia.
+# Inicia la aplicación Node usando app.js.
+# Si quisieras usar nodemon en lugar de node, podrías cambiarlo a ["nodemon","app.js"].
+CMD ["node","app.js"]
+
+
+
+

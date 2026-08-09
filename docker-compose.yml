@@ -1,70 +1,87 @@
 services:
-  # Servicio principal de la aplicación Node.js
+  # Define los servicios (contenedores) que forman la aplicación.
+  # Cada clave bajo `services` representa un contenedor o imagen administrada por Compose.
   app:
-    # Construye la imagen a partir del Dockerfile del directorio actual.
-    # Esto es importante porque permite ejecutar la app en un contenedor con
-    # las dependencias necesarias definidas en el proyecto.
+    # Servicio: aplicación Node.js principal.
+    # `build: .` indica que Docker debe construir una imagen usando el Dockerfile
+    # que se encuentra en el mismo directorio donde se ejecuta docker-compose.
     build: .
 
-    # Expone el puerto 3000 del contenedor hacia el host.
-    # Así puedes abrir la aplicación en tu navegador en http://localhost:3000.
+    # Mapea el puerto 3000 del contenedor al puerto 3000 del host.
+    # Formato: "HOST:CONTAINER". Permite acceder desde el navegador del host.
     ports:
       - "3000:3000"
 
-    # Variables de entorno que la aplicación necesita para conectarse a la base de datos
-    # y para saber en qué puerto debe escuchar.
+    # Variables de entorno que exporta el contenedor para la aplicación.
+    # La app las leerá (por ejemplo con process.env) para configurar conexión y puerto.
     environment:
+      # Nombre del host o servicio de la base de datos dentro de la red de Compose.
       DB_HOST: mariadbDocker
+      # Usuario de la base de datos que la app usará para conectarse.
       DB_USER: root
+      # Contraseña del usuario de la base de datos (sensible, en producción usar secretos).
       DB_PASSWORD: root
+      # Nombre de la base de datos a utilizar.
       DB_NAME: library
+      # Puerto en el que la aplicación escucha dentro del contenedor.
       PORT: 3000
 
-    # Asegura que la base de datos esté lista antes de iniciar la app.
-    # Esto evita errores de conexión cuando la app intenta hablar con MariaDB.
+    # Garantiza que el servicio `mariadbDocker` llegue a estado healthy antes
+    # de iniciar el servicio `app`. Evita errores por intentos de conexión tempranos.
     depends_on:
       mariadbDocker:
         condition: service_healthy
 
-  # Servicio de base de datos MariaDB
+  # Servicio: servidor de base de datos MariaDB.
   mariadbDocker:
-    # Usa la imagen oficial de MariaDB, que ya incluye el motor de base de datos.
-    # No es necesario usar build aquí porque la imagen oficial ya está lista para funcionar.
+    # Se usa la imagen oficial de MariaDB, etiqueta 11.4.
     image: mariadb:11.4
 
-    # Expone el puerto 3306 para permitir conexiones desde herramientas externas.
+    # Publica el puerto 3306 (MySQL/MariaDB) en el host para permitir conexiones
+    # externas (útil para herramientas de administración). No siempre necesario.
     ports:
       - "3306:3306"
 
-    # Configuración inicial de la base de datos.
-    # Estas variables crean la base de datos y definen la contraseña del usuario root.
+    # Variables que MariaDB lee para inicializar la instancia:
     environment:
+      # Contraseña del usuario root de MariaDB (evitar en texto plano en producción).
       MARIADB_ROOT_PASSWORD: root
+      # Nombre de la base de datos que se creará al iniciar el contenedor.
       MARIADB_DATABASE: library
 
-    # Volumen persistente para guardar los datos de MariaDB entre reinicios del contenedor.
-    # Sin este volumen, los datos se perderían al eliminar el contenedor.
+    # Volumen para persistir los datos de la base de datos entre reinicios.
+    # La ruta /var/lib/mysql es donde MariaDB guarda los datos dentro del contenedor.
     volumes:
       - mariadb_data:/var/lib/mysql
 
-    # Healthcheck para comprobar que MariaDB ya está lista para aceptar conexiones.
-    # Esto es importante porque la app depende de que la BD esté disponible.
+    # Healthcheck: comando que comprueba si MariaDB está lista para aceptar conexiones.
+    # Compose usa este resultado para determinar el estado `service_healthy`.
     healthcheck:
+      # Ejecuta el script `healthcheck.sh` dentro del contenedor con parámetros.
+      # Debe estar disponible en la imagen o en el contexto de ejecución.
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 5s
       timeout: 5s
       retries: 10
 
-  nginx: 
+  # Servicio: nginx como proxy/reverse-proxy o servidor estático.
+  nginx:
     image: nginx:latest
+    # Expone el puerto 80 en el host para servir tráfico HTTP.
     ports:
       - "80:80"
+    # Monta la configuración personalizada de nginx desde el host al contenedor.
+    # El sufijo `:ro` monta el archivo como solo-lectura dentro del contenedor.
     volumes:
-       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro 
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    # Indica que `nginx` debe iniciarse después de que `app` haya iniciado (no espera healthy).
     depends_on:
       - app
 
 
-# Definición del volumen persistente usado por MariaDB.
+# Definición de volúmenes persistentes usados por los servicios.
 volumes:
+  # Volumen nombrado para almacenar los datos de MariaDB fuera del contenedor.
   mariadb_data:
+
+  
